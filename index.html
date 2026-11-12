@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>WormGPT — واجهة المحادثة الذكية</title>
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+:root {
+  --red: #ff2438;
+  --red-bright: #ff4757;
+  --red-mid: #d91226;
+  --red-deep: #7d0613;
+  --red-glow: rgba(255, 36, 56, 0.42);
+  --bg-pure: #000000;
+  --bg-elev: #08080b;
+  --bg-panel: rgba(14, 14, 18, 0.72);
+  --glass-fill: rgba(255, 255, 255, 0.045);
+  --glass-fill-2: rgba(255, 255, 255, 0.075);
+  --glass-border: rgba(255, 255, 255, 0.11);
+  --glass-border-red: rgba(255, 56, 72, 0.36);
+  --txt-main: #f5f5f7;
+  --txt-sec: rgba(235, 235, 245, 0.64);
+  --txt-dim: rgba(235, 235, 245, 0.38);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000000;
+  color: var(--txt-main);
+  font-family: 'IBM Plex Sans Arabic', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.latin {
+  font-family: 'Inter', -apple-system, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Ambient Red & Black iOS Atmosphere */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(65% 55% at 82% 8%, rgba(165, 10, 26, 0.24) 0%, transparent 70%),
+    radial-gradient(50% 45% at 15% 90%, rgba(120, 6, 18, 0.20) 0%, transparent 72%),
+    radial-gradient(40% 35% at 50% 50%, rgba(45, 3, 8, 0.35) 0%, transparent 80%),
+    #000000;
+}
+
+.ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* iOS Liquid Glass Surfaces */
+.ios-glass {
+  background: linear-gradient(160deg, rgba(26, 26, 32, 0.72) 0%, rgba(10, 10, 14, 0.82) 100%);
+  backdrop-filter: blur(34px) saturate(190%);
+  -webkit-backdrop-filter: blur(34px) saturate(190%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 20px 50px -18px rgba(0, 0, 0, 0.85);
+}
+
+.ios-glass-soft {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 12px 32px -14px rgba(0, 0, 0, 0.75);
+}
+
+/* iOS 3D Glass Squircle Icons */
+.g-icon {
+  --sz: 44px;
+  --rad: 14px;
+  width: var(--sz);
+  height: var(--sz);
+  border-radius: var(--rad);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  isolation: isolate;
+  background: linear-gradient(160deg, #ff5866 0%, #dc1428 54%, #68040f 100%);
+  box-shadow:
+    0 10px 24px -6px rgba(255, 36, 56, 0.55),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -8px 14px rgba(45, 0, 6, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
+}
+
+.g-icon::before {
+  content: "";
+  position: absolute;
+  inset: 2px 2px 50% 2px;
+  border-radius: calc(var(--rad) - 2px) calc(var(--rad) - 2px) 24px 24px / calc(var(--rad) - 2px) calc(var(--rad) - 2px) 10px 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.04));
+  z-index: -1;
+  pointer-events: none;
+}
+
+.g-icon svg {
+  width: calc(var(--sz) * 0.48);
+  height: calc(var(--sz) * 0.48);
+  stroke: #ffffff;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 4px rgba(55, 0, 8, 0.65));
+}
+
+.g-icon.obsidian {
+  background: linear-gradient(160deg, rgba(64, 64, 74, 0.92) 0%, rgba(22, 22, 27, 0.96) 55%, rgba(6, 6, 9, 1) 100%);
+  box-shadow:
+    0 10px 22px -6px rgba(0, 0, 0, 0.85),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.13);
+}
+
+.g-icon.obsidian svg {
+  stroke: #ff4d5c;
+  filter: drop-shadow(0 0 8px rgba(255, 36, 56, 0.35));
+}
+
+.g-icon.crimson-glass {
+  background: linear-gradient(160deg, rgba(255, 56, 72, 0.28) 0%, rgba(140, 8, 22, 0.32) 60%, rgba(20, 4, 7, 0.85) 100%);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 10px 24px -8px rgba(255, 36, 56, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 68, 82, 0.35);
+}
+
+.g-icon.xs { --sz: 30px; --rad: 10px; }
+.g-icon.sm { --sz: 36px; --rad: 12px; }
+.g-icon.md { --sz: 46px; --rad: 15px; }
+.g-icon.lg { --sz: 68px; --rad: 22px; }
+
+/* Icon Buttons */
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: var(--txt-sec);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.icon-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 36, 56, 0.14);
+  border-color: rgba(255, 68, 82, 0.42);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Primary Red Glass Button */
+.btn-crimson {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: 15px;
+  padding: 0.72rem 1.1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #ffffff;
+  border: 1px solid rgba(255, 120, 130, 0.35);
+  background: linear-gradient(180deg, #ff4757 0%, #d81125 60%, #9e0918 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 10px 26px -8px rgba(255, 36, 56, 0.65);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn-crimson:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 14px 32px -6px rgba(255, 36, 56, 0.8);
+}
+
+.btn-crimson:active {
+  transform: scale(0.97);
+}
+
+.btn-crimson svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Layout Shell */
+.app-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(16, 14, 17, 0.84) 0%, rgba(6, 6, 8, 0.92) 100%);
+  backdrop-filter: blur(36px) saturate(190%);
+  -webkit-backdrop-filter: blur(36px) saturate(190%);
+  transition: margin-right 0.38s cubic-bezier(0.22, 1, 0.36, 1), transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 40;
+}
+
+.sidebar.collapsed {
+  margin-right: -300px;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    margin-right: 0 !important;
+    transform: translateX(102%);
+    box-shadow: -24px 0 60px rgba(0, 0, 0, 0.9);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+}
+
+.mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  z-index: 35;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Thread Items */
+.thread-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.68rem 0.78rem;
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--txt-sec);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.thread-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.thread-item.active {
+  background: linear-gradient(90deg, rgba(255, 36, 56, 0.18) 0%, rgba(255, 36, 56, 0.05) 100%);
+  border-color: rgba(255, 56, 72, 0.34);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.thread-item.active::before {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 22%;
+  bottom: 22%;
+  width: 3px;
+  border-radius: 4px;
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+}
+
+.thread-actions {
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  transition: opacity 0.18s ease;
+}
+
+.thread-item:hover .thread-actions,
+.thread-item.active .thread-actions {
+  opacity: 1;
+}
+
+.mini-act {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--txt-sec);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.mini-act:hover {
+  color: #ffffff;
+  background: rgba(255, 36, 56, 0.25);
+}
+
+.mini-act svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Custom Scrollbars */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 56, 72, 0.3) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 56, 72, 0.28);
+  border-radius: 99px;
+}
+
+/* Starter Cards */
+.starter-card {
+  text-align: right;
+  padding: 1.05rem 1.15rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.starter-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 68, 82, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 20px 40px -18px rgba(255, 36, 56, 0.38);
+}
+
+.starter-card:hover .g-icon {
+  transform: scale(1.06) rotate(-3deg);
+}
+
+/* Messages */
+.msg-enter {
+  animation: msgIn 0.34s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.user-bubble {
+  background: linear-gradient(155deg, #e3162b 0%, #9e0818 100%);
+  border: 1px solid rgba(255, 130, 140, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 14px 32px -12px rgba(255, 36, 56, 0.45);
+  border-radius: 22px 22px 6px 22px;
+  color: #ffffff;
+}
+
+.ai-card {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 16px 36px -18px rgba(0, 0, 0, 0.8);
+  border-radius: 22px 6px 22px 22px;
+}
+
+/* Markdown Typography inside AI responses */
+.md-body {
+  font-size: 0.96rem;
+  line-height: 1.85;
+  color: #f2f2f5;
+  word-break: break-word;
+}
+.md-body p { margin: 0 0 0.75rem 0; }
+.md-body p:last-child { margin-bottom: 0; }
+.md-body h1, .md-body h2, .md-body h3 {
+  color: #ffffff;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem 0;
+  line-height: 1.4;
+}
+.md-body h3 { font-size: 1.05rem; color: #ff808b; }
+.md-body ul, .md-body ol {
+  margin: 0.5rem 0 0.85rem 0;
+  padding-right: 1.35rem;
+}
+.md-body li { margin-bottom: 0.35rem; }
+.md-body li::marker { color: var(--red-bright); }
+.md-body strong { color: #ffffff; font-weight: 600; }
+.md-body code.inline-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 7px;
+  background: rgba(255, 36, 56, 0.14);
+  border: 1px solid rgba(255, 68, 82, 0.28);
+  color: #ff9aa3;
+  direction: ltr;
+  display: inline-block;
+}
+.md-body blockquote {
+  margin: 0.75rem 0;
+  padding: 0.6rem 1rem;
+  border-right: 3px solid var(--red);
+  background: rgba(255, 36, 56, 0.07);
+  border-radius: 10px 0 0 10px;
+  color: var(--txt-sec);
+}
+
+/* Code Block Glass Window */
+.code-box {
+  margin: 0.9rem 0;
+  border-radius: 16px;
+  overflow: hidden;
+  direction: ltr;
+  text-align: left;
+  background: #050507;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 28px -12px rgba(0, 0, 0, 0.9);
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.85rem;
+  background: linear-gradient(90deg, rgba(255, 36, 56, 0.14), rgba(255, 255, 255, 0.03));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.76rem;
+  color: var(--txt-sec);
+}
+
+.code-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.code-dots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.code-box pre {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: #e8e8ed;
+}
+
+.copy-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f5f5f7;
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-code-btn:hover {
+  background: rgba(255, 36, 56, 0.25);
+  border-color: rgba(255, 68, 82, 0.5);
+}
+
+.copy-code-btn svg {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* Reasoning Accordion */
+.thought-box {
+  margin-bottom: 0.75rem;
+  border-radius: 14px;
+  background: rgba(255, 36, 56, 0.06);
+  border: 1px solid rgba(255, 68, 82, 0.22);
+  overflow: hidden;
+}
+
+.thought-box summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.52rem 0.85rem;
+  font-size: 0.8rem;
+  color: #ff8e99;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+.thought-box summary::-webkit-details-marker { display: none; }
+.thought-content {
+  padding: 0.1rem 0.85rem 0.7rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--txt-sec);
+  border-top: 1px solid rgba(255, 68, 82, 0.14);
+}
+
+/* Composer Dock */
+.composer-wrap {
+  border-radius: 26px;
+  transition: border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.composer-wrap:focus-within {
+  border-color: rgba(255, 68, 82, 0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 4px rgba(255, 36, 56, 0.12),
+    0 24px 54px -16px rgba(0, 0, 0, 0.92);
+}
+
+.composer-input {
+  width: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.97rem;
+  line-height: 1.65;
+  max-height: 180px;
+  min-height: 28px;
+}
+
+.composer-input::placeholder {
+  color: rgba(235, 235, 245, 0.36);
+}
+
+/* Mode Toggle Pill */
+.tool-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 0.79rem;
+  font-weight: 500;
+  color: var(--txt-sec);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.tool-pill:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.tool-pill.active {
+  color: #ffffff;
+  background: linear-gradient(180deg, rgba(255, 56, 72, 0.34), rgba(180, 10, 26, 0.38));
+  border-color: rgba(255, 80, 92, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 16px rgba(255, 36, 56, 0.25);
+}
+
+.tool-pill svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Streaming Cursor */
+.stream-caret {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  margin-right: 4px;
+  vertical-align: middle;
+  border-radius: 3px;
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0.2; }
+}
+
+/* Popover Model Menu */
+.model-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 290px;
+  border-radius: 22px;
+  padding: 0.5rem;
+  z-index: 60;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.97);
+  pointer-events: none;
+  transition: all 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.model-menu.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  border-radius: 28px;
+  padding: 1.5rem;
+  transform: translateY(14px) scale(0.97);
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.modal-overlay.open .modal-card {
+  transform: translateY(0) scale(1);
+}
+
+/* Status Dot */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red-bright);
+  box-shadow: 0 0 10px var(--red);
+}
+
+/* Toast */
+.ios-toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  z-index: 100;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  color: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.ios-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- Clean Vector Icon Sprite (Zero Emojis) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ic-core" viewBox="0 0 24 24">
+    <path d="M12 2.5 19.5 7v10L12 21.5 4.5 17V7L12 2.5z"/>
+    <path d="M12 8v8M8.5 10l3.5 2 3.5-2"/>
+  </symbol>
+  <symbol id="ic-bolt" viewBox="0 0 24 24">
+    <path d="M13 2 4.5 13.5h6.5L10 22l9.5-11.5H13L13 2z"/>
+  </symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24">
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+  <symbol id="ic-sidebar" viewBox="0 0 24 24">
+    <rect x="3" y="4" width="18" height="16" rx="3"/>
+    <path d="M9 4v16"/>
+  </symbol>
+  <symbol id="ic-search" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="6.5"/>
+    <path d="m16 16 4.5 4.5"/>
+  </symbol>
+  <symbol id="ic-chat" viewBox="0 0 24 24">
+    <path d="M5 5.5h14A2.5 2.5 0 0 1 21.5 8v7.5A2.5 2.5 0 0 1 19 18h-6.5l-4.5 3.5V18H5A2.5 2.5 0 0 1 2.5 15.5V8A2.5 2.5 0 0 1 5 5.5z"/>
+  </symbol>
+  <symbol id="ic-trash" viewBox="0 0 24 24">
+    <path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 12.5a2 2 0 0 0 2 1.8h5a2 2 0 0 0 2-1.8L17.5 7"/>
+  </symbol>
+  <symbol id="ic-edit" viewBox="0 0 24 24">
+    <path d="M15.5 4.5 19.5 8.5 8.5 19.5H4.5v-4L15.5 4.5z"/>
+  </symbol>
+  <symbol id="ic-settings" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="3.2"/>
+    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z"/>
+  </symbol>
+  <symbol id="ic-code" viewBox="0 0 24 24">
+    <path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>
+  </symbol>
+  <symbol id="ic-cpu" viewBox="0 0 24 24">
+    <rect x="6" y="6" width="12" height="12" rx="3"/>
+    <rect x="9.5" y="9.5" width="5" height="5" rx="1"/>
+    <path d="M9 2.5v3M15 2.5v3M9 18.5v3M15 18.5v3M2.5 9h3M2.5 15h3M18.5 9h3M18.5 15h3"/>
+  </symbol>
+  <symbol id="ic-layers" viewBox="0 0 24 24">
+    <path d="m12 3 9 5-9 5-9-5 9-5z"/>
+    <path d="m3 12.5 9 5 9-5M3 17l9 4.5 9-4.5"/>
+  </symbol>
+  <symbol id="ic-doc" viewBox="0 0 24 24">
+    <path d="M7 3h7l5 5v13H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+    <path d="M14 3v5h5M9.5 13h5M9.5 17h5"/>
+  </symbol>
+  <symbol id="ic-paperclip" viewBox="0 0 24 24">
+    <path d="m21 11.5-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.5 3.5 0 0 1 5 5l-9.2 9.2a1.5 1.5 0 0 1-2.1-2.1l8.5-8.5"/>
+  </symbol>
+  <symbol id="ic-send" viewBox="0 0 24 24">
+    <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>
+  </symbol>
+  <symbol id="ic-stop" viewBox="0 0 24 24">
+    <rect x="6.5" y="6.5" width="11" height="11" rx="2.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-copy" viewBox="0 0 24 24">
+    <rect x="9" y="9" width="11" height="11" rx="2.5"/>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+  </symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24">
+    <path d="m5 12.5 4.5 4.5L19 7.5"/>
+  </symbol>
+  <symbol id="ic-refresh" viewBox="0 0 24 24">
+    <path d="M20 11A8 8 0 0 0 5.3 6.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.7 4.5L20 16M20 20v-4h-4"/>
+  </symbol>
+  <symbol id="ic-chev-down" viewBox="0 0 24 24">
+    <path d="m6 9 6 6 6-6"/>
+  </symbol>
+  <symbol id="ic-download" viewBox="0 0 24 24">
+    <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4 19.5h16"/>
+  </symbol>
+  <symbol id="ic-close" viewBox="0 0 24 24">
+    <path d="M6 6l12 12M18 6 6 18"/>
+  </symbol>
+  <symbol id="ic-shield" viewBox="0 0 24 24">
+    <path d="M12 3 4.5 6v5.8c0 4.6 3.2 8.3 7.5 9.2 4.3-.9 7.5-4.6 7.5-9.2V6L12 3z"/>
+    <path d="m9 12 2 2 4-4"/>
+  </symbol>
+  <symbol id="ic-user" viewBox="0 0 24 24">
+    <circle cx="12" cy="8.5" r="3.8"/>
+    <path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/>
+  </symbol>
+</svg>
+
+<div class="ambient"></div>
+<div id="toast" class="ios-toast ios-glass">تم النسخ إلى الحافظة</div>
+<div id="mobileBackdrop" class="mobile-backdrop"></div>
+
+<div class="app-shell">
+
+  <!-- RIGHT SIDEBAR (RTL) -->
+  <aside id="sidebar" class="sidebar">
+    <!-- Brand Header -->
+    <div class="flex items-center justify-between px-4 pt-4 pb-3">
+      <div class="flex items-center gap-3">
+        <span class="g-icon sm">
+          <svg><use href="#ic-core"/></svg>
+        </span>
+        <div>
+          <div class="latin font-bold text-base tracking-tight text-white">
+            Worm<span style="color:var(--red-bright)">GPT</span>
+          </div>
+          <div class="text-[11px]" style="color:var(--txt-dim)">واجهة المحادثة الاحترافية</div>
+        </div>
+      </div>
+      <button id="collapseSidebarBtn" class="icon-btn" title="طي الشريط الجانبي" aria-label="طي الشريط الجانبي">
+        <svg><use href="#ic-sidebar"/></svg>
+      </button>
+    </div>
+
+    <!-- New Chat Button -->
+    <div class="px-3.5 pt-1 pb-3">
+      <button id="newChatBtn" class="btn-crimson w-full justify-between">
+        <span class="flex items-center gap-2">
+          <svg><use href="#ic-plus"/></svg>
+          <span>محادثة جديدة</span>
+        </span>
+        <span class="latin text-[11px] px-2 py-0.5 rounded-md bg-black/30 border border-white/15">Ctrl+K</span>
+      </button>
+    </div>
+
+    <!-- Search Threads -->
+    <div class="px-3.5 pb-3">
+      <div class="relative flex items-center">
+        <svg class="w-4 h-4 absolute right-3 pointer-events-none" style="stroke:var(--txt-dim);fill:none;stroke-width:2"><use href="#ic-search"/></svg>
+        <input id="searchThreadsInput" type="text" placeholder="بحث في السجل..."
+          class="w-full pr-9 pl-3 py-2 text-xs rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder:text-white/35 focus:outline-none focus:border-red-500/50 transition">
+      </div>
+    </div>
+
+    <!-- Conversations List -->
+    <div class="px-3.5 pb-1.5 flex items-center justify-between">
+      <span class="text-[11px] font-semibold tracking-wide" style="color:var(--txt-dim)">المحادثات النشطة</span>
+      <span id="threadCountBadge" class="latin text-[11px] px-2 py-0.5 rounded-full bg-white/[0.05] text-white/50">1</span>
+    </div>
+
+    <div id="threadsList" class="flex-1 overflow-y-auto thin-scroll px-3 py-1 space-y-1"></div>
+
+    <!-- Bottom Sidebar User & Controls -->
+    <div class="p-3 border-t border-white/[0.08] space-y-2">
+      <div class="ios-glass-soft rounded-2xl p-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="g-icon xs obsidian">
+            <svg><use href="#ic-user"/></svg>
+          </span>
+          <div class="truncate">
+            <div class="text-xs font-semibold text-white truncate">مساحة العمل الخاصة</div>
+            <div class="text-[11px] flex items-center gap-1.5" style="color:var(--txt-sec)">
+              <span class="status-dot" style="width:6px;height:6px"></span>
+              <span>الجلسة مشفرة محلياً</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="openSettingsSidebarBtn" class="icon-btn" style="width:32px;height:32px;border-radius:10px" title="الإعدادات">
+            <svg style="width:15px;height:15px"><use href="#ic-settings"/></svg>
+          </button>
+          <button id="clearAllThreadsBtn" class="icon-btn" style="width:32px;height:32px;border-radius:10px" title="مسح السجل">
+            <svg style="width:15px;height:15px"><use href="#ic-trash"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CHAT AREA -->
+  <main class="flex-1 flex flex-col min-w-0 h-full relative">
+
+    <!-- Top Floating iOS Header -->
+    <header class="px-4 md:px-6 pt-3 pb-2.5 flex items-center justify-between gap-3 border-b border-white/[0.07] bg-black/45 backdrop-blur-2xl z-30">
+      <div class="flex items-center gap-2.5">
+        <button id="openSidebarBtn" class="icon-btn" title="إظهار القائمة" aria-label="إظهار القائمة">
+          <svg><use href="#ic-sidebar"/></svg>
+        </button>
+
+        <!-- Model Switcher Dropdown -->
+        <div class="relative">
+          <button id="modelSelectorBtn" class="ios-glass-soft rounded-2xl px-3 py-1.5 flex items-center gap-2.5 cursor-pointer hover:border-red-500/40 transition">
+            <span class="g-icon xs" id="activeModelIcon">
+              <svg><use href="#ic-bolt"/></svg>
+            </span>
+            <div class="text-right">
+              <div class="flex items-center gap-1.5">
+                <span id="activeModelName" class="latin text-xs md:text-sm font-bold text-white">WormGPT-4o Core</span>
+                <svg class="w-3.5 h-3.5 text-white/60" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-chev-down"/></svg>
+              </div>
+              <div id="activeModelSub" class="text-[10px] hidden sm:block" style="color:var(--txt-sec)">استجابة فورية متوازنة</div>
+            </div>
+          </button>
+
+          <!-- Popover Menu -->
+          <div id="modelMenu" class="model-menu ios-glass">
+            <div class="px-2.5 py-1.5 text-[11px] font-semibold" style="color:var(--txt-dim)">اختر محرك المعالجة</div>
+            <button data-model="core" class="model-opt w-full text-right p-2.5 rounded-2xl flex items-center gap-3 hover:bg-white/[0.06] transition cursor-pointer">
+              <span class="g-icon sm"><svg><use href="#ic-bolt"/></svg></span>
+              <div class="flex-1">
+                <div class="latin text-xs font-bold text-white">WormGPT-4o Core</div>
+                <div class="text-[11px]" style="color:var(--txt-sec)">سرعة فائقة ومحادثة يومية دقيقة</div>
+              </div>
+              <svg class="w-4 h-4 text-red-400 check-mark" style="stroke:currentColor;fill:none;stroke-width:2.3"><use href="#ic-check"/></svg>
+            </button>
+
+            <button data-model="reasoning" class="model-opt w-full text-right p-2.5 rounded-2xl flex items-center gap-3 hover:bg-white/[0.06] transition cursor-pointer">
+              <span class="g-icon sm obsidian"><svg><use href="#ic-cpu"/></svg></span>
+              <div class="flex-1">
+                <div class="latin text-xs font-bold text-white">WormGPT-R1 Deep</div>
+                <div class="text-[11px]" style="color:var(--txt-sec)">تحليل منطقي متعدد الخطوات</div>
+              </div>
+              <svg class="w-4 h-4 text-red-400 check-mark hidden" style="stroke:currentColor;fill:none;stroke-width:2.3"><use href="#ic-check"/></svg>
+            </button>
+
+            <button data-model="coder" class="model-opt w-full text-right p-2.5 rounded-2xl flex items-center gap-3 hover:bg-white/[0.06] transition cursor-pointer">
+              <span class="g-icon sm crimson-glass"><svg><use href="#ic-code"/></svg></span>
+              <div class="flex-1">
+                <div class="latin text-xs font-bold text-white">WormGPT Architect</div>
+                <div class="text-[11px]" style="color:var(--txt-sec)">هندسة البرمجيات وبناء الأنظمة</div>
+              </div>
+              <svg class="w-4 h-4 text-red-400 check-mark hidden" style="stroke:currentColor;fill:none;stroke-width:2.3"><use href="#ic-check"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Header Right Actions -->
+      <div class="flex items-center gap-2">
+        <div id="connectionBadge" class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs bg-red-500/10 border border-red-500/25 text-red-200">
+          <span class="status-dot"></span>
+          <span id="modeBadgeLabel">نواة محلية نشطة</span>
+        </div>
+        <button id="exportChatBtn" class="icon-btn" title="تصدير المحادثة" aria-label="تصدير المحادثة">
+          <svg><use href="#ic-download"/></svg>
+        </button>
+        <button id="quickNewChatBtn" class="icon-btn" title="محادثة جديدة" aria-label="محادثة جديدة">
+          <svg><use href="#ic-plus"/></svg>
+        </button>
+        <button id="openSettingsTopBtn" class="icon-btn" title="إعدادات النموذج" aria-label="إعدادات النموذج">
+          <svg><use href="#ic-settings"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Conversation Viewport -->
+    <div id="chatScroll" class="flex-1 overflow-y-auto thin-scroll px-4 md:px-8 py-6 relative">
+      <div class="max-w-3xl mx-auto w-full">
+
+        <!-- Empty Welcome State -->
+        <div id="welcomeState" class="py-8 md:py-14 text-center">
+          <div class="inline-flex justify-center mb-6">
+            <span class="g-icon lg">
+              <svg><use href="#ic-core"/></svg>
+            </span>
+          </div>
+
+          <h1 class="text-2xl md:text-4xl font-bold tracking-tight text-white">
+            مرحباً بك في <span class="latin" style="color:var(--red-bright)">WormGPT</span>
+          </h1>
+          <p class="mt-3 text-sm md:text-base max-w-lg mx-auto leading-relaxed" style="color:var(--txt-sec)">
+            بيئة محادثة ذكية بتصميم زجاجي نظيف، جاهزة لكتابة الأكواد، تحليل الملفات، وصياغة المحتوى الاحترافي بدقة عالية.
+          </p>
+
+          <!-- 4 Glass Squircle Starter Cards -->
+          <div class="grid sm:grid-cols-2 gap-3.5 mt-9 text-right">
+            <button class="starter-card ios-glass-soft flex items-start gap-3.5" data-prompt="صمم لي واجهة برمجة تطبيقات REST API متكاملة بلغة Node.js و Express لإدارة المهام مع التحقق من المدخلات ومعالجة الأخطاء.">
+              <span class="g-icon md"><svg><use href="#ic-code"/></svg></span>
+              <div>
+                <div class="font-semibold text-sm text-white">بناء واجهة برمجية متكاملة</div>
+                <div class="text-xs mt-1 leading-relaxed" style="color:var(--txt-sec)">كتابة كود Node.js منظم مع معالجة الأخطاء</div>
+              </div>
+            </button>
+
+            <button class="starter-card ios-glass-soft flex items-start gap-3.5" data-prompt="ضع لي خطة معمارية لتصميم نظام قواعد بيانات لتطبيق تجارة إلكترونية عالي الأداء مع شرح العلاقات والفهارس.">
+              <span class="g-icon md obsidian"><svg><use href="#ic-layers"/></svg></span>
+              <div>
+                <div class="font-semibold text-sm text-white">هندسة الأنظمة وقواعد البيانات</div>
+                <div class="text-xs mt-1 leading-relaxed" style="color:var(--txt-sec)">تخطيط الجداول والفهارس لتحسين السرعة</div>
+              </div>
+            </button>
+
+            <button class="starter-card ios-glass-soft flex items-start gap-3.5" data-prompt="اكتب لي مقترح مشروع تقني رسمي ومختصر موجّه للإدارة التنفيذية لإطلاق منصة تحليلات داخلية.">
+              <span class="g-icon md crimson-glass"><svg><use href="#ic-doc"/></svg></span>
+              <div>
+                <div class="font-semibold text-sm text-white">صياغة مقترح تنفيذي رسمي</div>
+                <div class="text-xs mt-1 leading-relaxed" style="color:var(--txt-sec)">كتابة إدارية رصينة بهيكلة واضحة</div>
+              </div>
+            </button>
+
+            <button class="starter-card ios-glass-soft flex items-start gap-3.5" data-prompt="اشرح لي أفضل الممارسات لتأمين تطبيقات الويب الحديثة وحماية الجلسات والبيانات الحساسة خطوة بخطوة.">
+              <span class="g-icon md obsidian"><svg><use href="#ic-shield"/></svg></span>
+              <div>
+                <div class="font-semibold text-sm text-white">مراجعة أمان تطبيقات الويب</div>
+                <div class="text-xs mt-1 leading-relaxed" style="color:var(--txt-sec)">أفضل ممارسات التشفير وحماية الجلسات</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Stream Container -->
+        <div id="messagesList" class="space-y-6 pb-6"></div>
+      </div>
+    </div>
+
+    <!-- Scroll to Bottom Floating Pill -->
+    <button id="scrollBottomBtn" class="hidden absolute bottom-36 left-1/2 -translate-x-1/2 z-20 ios-glass px-3.5 py-1.5 rounded-full text-xs text-white/85 hover:text-white flex items-center gap-1.5 cursor-pointer border border-red-500/35">
+      <span>الانتقال إلى الأسفل</span>
+      <svg class="w-3.5 h-3.5" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-chev-down"/></svg>
+    </button>
+
+    <!-- Bottom iOS Glass Composer Dock -->
+    <div class="px-3 sm:px-6 pb-4 pt-1 z-20">
+      <div class="max-w-3xl mx-auto">
+        <div class="composer-wrap ios-glass p-3">
+
+          <!-- Attached File Preview -->
+          <div id="attachmentBar" class="hidden mb-2.5 pb-2.5 border-b border-white/10 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="g-icon xs crimson-glass"><svg><use href="#ic-doc"/></svg></span>
+              <div class="truncate">
+                <div id="attachmentName" class="latin text-xs font-semibold text-white truncate">file.txt</div>
+                <div id="attachmentSize" class="text-[11px]" style="color:var(--txt-sec)">2.1 KB</div>
+              </div>
+            </div>
+            <button id="removeAttachmentBtn" class="icon-btn" style="width:28px;height:28px;border-radius:9px" title="إزالة المرفق">
+              <svg style="width:14px;height:14px"><use href="#ic-close"/></svg>
+            </button>
+          </div>
+
+          <!-- Textarea -->
+          <textarea id="composerInput" rows="1" class="composer-input px-1.5 py-1" placeholder="اكتب سؤالك أو الصق الكود هنا..."></textarea>
+
+          <!-- Composer Bottom Toolbar -->
+          <div class="flex items-center justify-between gap-2 pt-2 mt-1">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <input id="fileInput" type="file" accept=".txt,.md,.js,.ts,.py,.json,.html,.css,.csv" class="hidden">
+              <button id="attachFileBtn" type="button" class="tool-pill" title="إرفاق ملف نصي أو برمجي">
+                <svg><use href="#ic-paperclip"/></svg>
+                <span class="hidden sm:inline">إرفاق ملف</span>
+              </button>
+
+              <button id="deepThinkToggle" type="button" class="tool-pill active" title="إظهار مسار التفكير المنطقي قبل الإجابة">
+                <svg><use href="#ic-cpu"/></svg>
+                <span>تفكير عميق</span>
+              </button>
+
+              <button id="codeFocusToggle" type="button" class="tool-pill" title="تفضيل الأمثلة البرمجية العملية">
+                <svg><use href="#ic-code"/></svg>
+                <span>تركيز برمجي</span>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <span id="charCounter" class="latin text-[11px] hidden sm:inline" style="color:var(--txt-dim)">0</span>
+              <button id="sendOrStopBtn" type="button" class="btn-crimson" style="width:42px;height:42px;padding:0;border-radius:14px" aria-label="إرسال">
+                <svg id="sendBtnIcon" style="width:19px;height:19px"><use href="#ic-send"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-2 text-[11px]" style="color:var(--txt-dim)">
+          WormGPT يعمل بواجهة iOS الزجاجية — راجع المخرجات البرمجية والتقنية قبل اعتمادها في بيئة الإنتاج.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- SETTINGS MODAL (iOS Glass Sheet) -->
+<div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-card ios-glass">
+    <div class="flex items-center justify-between pb-3.5 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <span class="g-icon sm"><svg><use href="#ic-settings"/></svg></span>
+        <div>
+          <h2 class="text-base font-bold text-white">إعدادات النظام والاتصال</h2>
+          <p class="text-xs" style="color:var(--txt-sec)">تخصيص سلوك المساعد أو ربط مفتاح API خارجي</p>
+        </div>
+      </div>
+      <button id="closeSettingsBtn" class="icon-btn" style="width:34px;height:34px">
+        <svg><use href="#ic-close"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-4 py-4 text-right">
+      <div>
+        <label class="block text-xs font-semibold text-white mb-1.5">التوجيه النظامي (System Prompt)</label>
+        <textarea id="sysPromptInput" rows="2" class="w-full rounded-xl p-2.5 text-xs bg-white/[0.04] border border-white/12 text-white focus:outline-none focus:border-red-500/50"
+          placeholder="مثال: أجب بأسلوب هندسي مختصر ومنظم مع أمثلة عملية..."></textarea>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-white mb-1.5">نقطة اتصال متوافقة مع OpenAI (اختياري)</label>
+          <input id="apiEndpointInput" type="url" dir="ltr"
+            class="latin w-full rounded-xl px-3 py-2 text-xs bg-white/[0.04] border border-white/12 text-white focus:outline-none focus:border-red-500/50"
+            placeholder="https://api.openai.com/v1/chat/completions">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-white mb-1.5">مفتاح API السري (يُحفظ محلياً فقط)</label>
+          <input id="apiKeyInput" type="password" dir="ltr"
+            class="latin w-full rounded-xl px-3 py-2 text-xs bg-white/[0.04] border border-white/12 text-white focus:outline-none focus:border-red-500/50"
+            placeholder="sk-...">
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-3 items-center">
+        <div>
+          <label class="block text-xs font-semibold text-white mb-1.5">اسم النموذج البعيد (عند تفعيل API)</label>
+          <input id="apiModelInput" type="text" dir="ltr"
+            class="latin w-full rounded-xl px-3 py-2 text-xs bg-white/[0.04] border border-white/12 text-white focus:outline-none focus:border-red-500/50"
+            placeholder="gpt-4o-mini">
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5">
+            <span class="font-semibold text-white">درجة الإبداع (Temperature)</span>
+            <span id="tempValLabel" class="latin text-red-400">0.7</span>
+          </div>
+          <input id="tempRangeInput" type="range" min="0" max="1.4" step="0.1" value="0.7" class="w-full accent-red-500 cursor-pointer">
+        </div>
+      </div>
+
+      <div class="rounded-2xl p-3 bg-red-500/[0.07] border border-red-500/20 text-xs leading-relaxed" style="color:var(--txt-sec)">
+        في حال ترك مفتاح API فارغاً، يعمل WormGPT فوراً عبر محرك المحاكاة الذكي المدمج مع دعم كامل لتنسيق الأكواد والتفكير العميق.
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+      <button id="cancelSettingsBtn" class="tool-pill px-4 h-9">إلغاء</button>
+      <button id="saveSettingsBtn" class="btn-crimson py-2 px-5 text-xs">حفظ الإعدادات</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'wormgpt_ios_threads_v2';
+  const SETTINGS_KEY = 'wormgpt_ios_settings_v2';
+
+  const MODELS = {
+    core: { name: 'WormGPT-4o Core', sub: 'استجابة فورية متوازنة', icon: '#ic-bolt', style: '' },
+    reasoning: { name: 'WormGPT-R1 Deep', sub: 'تحليل منطقي متعدد الخطوات', icon: '#ic-cpu', style: 'obsidian' },
+    coder: { name: 'WormGPT Architect', sub: 'هندسة البرمجيات وبناء الأنظمة', icon: '#ic-code', style: 'crimson-glass' }
+  };
+
+  // App State
+  let state = {
+    threads: [],
+    activeId: null,
+    model: 'core',
+    deepThink: true,
+    codeFocus: false,
+    streaming: false,
+    stopSignal: false,
+    attachment: null,
+    searchQuery: '',
+    settings: {
+      systemPrompt: 'أنت WormGPT، مساعد ذكاء اصطناعي احترافي يجيب بالعربية الفصحى الواضحة مع أمثلة برمجية دقيقة ومنسقة.',
+      endpoint: 'https://api.openai.com/v1/chat/completions',
+      apiKey: '',
+      apiModel: 'gpt-4o-mini',
+      temperature: 0.7
+    }
+  };
+
+  // Elements
+  const el = {
+    sidebar: document.getElementById('sidebar'),
+    mobileBackdrop: document.getElementById('mobileBackdrop'),
+    collapseSidebarBtn: document.getElementById('collapseSidebarBtn'),
+    openSidebarBtn: document.getElementById('openSidebarBtn'),
+    newChatBtn: document.getElementById('newChatBtn'),
+    quickNewChatBtn: document.getElementById('quickNewChatBtn'),
+    searchThreadsInput: document.getElementById('searchThreadsInput'),
+    threadsList: document.getElementById('threadsList'),
+    threadCountBadge: document.getElementById('threadCountBadge'),
+    clearAllThreadsBtn: document.getElementById('clearAllThreadsBtn'),
+    modelSelectorBtn: document.getElementById('modelSelectorBtn'),
+    modelMenu: document.getElementById('modelMenu'),
+    activeModelIcon: document.getElementById('activeModelIcon'),
+    activeModelName: document.getElementById('activeModelName'),
+    activeModelSub: document.getElementById('activeModelSub'),
+    modeBadgeLabel: document.getElementById('modeBadgeLabel'),
+    exportChatBtn: document.getElementById('exportChatBtn'),
+    chatScroll: document.getElementById('chatScroll'),
+    welcomeState: document.getElementById('welcomeState'),
+    messagesList: document.getElementById('messagesList'),
+    scrollBottomBtn: document.getElementById('scrollBottomBtn'),
+    composerInput: document.getElementById('composerInput'),
+    charCounter: document.getElementById('charCounter'),
+    sendOrStopBtn: document.getElementById('sendOrStopBtn'),
+    sendBtnIcon: document.getElementById('sendBtnIcon'),
+    deepThinkToggle: document.getElementById('deepThinkToggle'),
+    codeFocusToggle: document.getElementById('codeFocusToggle'),
+    attachFileBtn: document.getElementById('attachFileBtn'),
+    fileInput: document.getElementById('fileInput'),
+    attachmentBar: document.getElementById('attachmentBar'),
+    attachmentName: document.getElementById('attachmentName'),
+    attachmentSize: document.getElementById('attachmentSize'),
+    removeAttachmentBtn: document.getElementById('removeAttachmentBtn'),
+    settingsModal: document.getElementById('settingsModal'),
+    openSettingsTopBtn: document.getElementById('openSettingsTopBtn'),
+    openSettingsSidebarBtn: document.getElementById('openSettingsSidebarBtn'),
+    closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+    cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
+    saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+    sysPromptInput: document.getElementById('sysPromptInput'),
+    apiEndpointInput: document.getElementById('apiEndpointInput'),
+    apiKeyInput: document.getElementById('apiKeyInput'),
+    apiModelInput: document.getElementById('apiModelInput'),
+    tempRangeInput: document.getElementById('tempRangeInput'),
+    tempValLabel: document.getElementById('tempValLabel'),
+    toast: document.getElementById('toast')
+  };
+
+  function uid() {
+    return 'th_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function showToast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.toast.classList.remove('show'), 2100);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Rich Markdown + Code Block Renderer
+  let codeBlockStore = [];
+  function renderMarkdown(raw) {
+    codeBlockStore = [];
+    let text = escapeHtml(raw);
+
+    // Extract fenced code blocks
+    text = text.replace(/```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeBlockStore.length;
+      const cleanLang = (lang || 'code').toUpperCase();
+      codeBlockStore.push({ lang: cleanLang, rawCode: code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"'), escapedCode: code });
+      return `@@CODEBLOCK_${idx}@@`;
+    });
+
+    // Inline code
+    text = text.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
+
+    // Headings
+    text = text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+    text = text.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+    text = text.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+    // Blockquote
+    text = text.replace(/^&gt;\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+
+    // Bold
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // Bullet lists
+    text = text.replace(/^(?:-|\*)\s+(.+)$/gm, '<li>$1</li>');
+    text = text.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
+    text = text.replace(/<\/ul>\s*<ul>/g, '');
+
+    // Paragraphs
+    const blocks = text.split(/\n{2,}/).map(part => {
+      const trimmed = part.trim();
+      if (!trimmed) return '';
+      if (/^<(h1|h2|h3|ul|blockquote)/.test(trimmed) || /^@@CODEBLOCK_\d+@@$/.test(trimmed)) {
+        return trimmed;
+      }
+      return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
+    });
+
+    let html = blocks.join('');
+
+    // Re-inject Glass Code Windows
+    html = html.replace(/@@CODEBLOCK_(\d+)@@/g, (_, i) => {
+      const item = codeBlockStore[Number(i)];
+      const encoded = encodeURIComponent(item.rawCode);
+      return `
+        <div class="code-box">
+          <div class="code-head">
+            <div class="flex items-center gap-2.5">
+              <div class="code-dots">
+                <span style="background:#ff3b4e"></span>
+                <span style="background:#3a3a42"></span>
+                <span style="background:#26262c"></span>
+              </div>
+              <span class="mono text-[11px] tracking-wider text-red-300/90">${item.lang}</span>
+            </div>
+            <button type="button" class="copy-code-btn" data-copy="${encoded}">
+              <svg><use href="#ic-copy"/></svg>
+              <span>نسخ الكود</span>
+            </button>
+          </div>
+          <pre><code>${item.escapedCode}</code></pre>
+        </div>
+      `;
+    });
+
+    return html;
+  }
+
+  // Persistence
+  function loadState() {
+    try {
+      const savedSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+      if (savedSettings) state.settings = { ...state.settings, ...savedSettings };
+
+      const savedThreads = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (Array.isArray(savedThreads) && savedThreads.length > 0) {
+        state.threads = savedThreads;
+        state.activeId = savedThreads[0].id;
+      } else {
+        createNewThread(false);
+      }
+    } catch {
+      createNewThread(false);
+    }
+    updateConnectionBadge();
+  }
+
+  function saveThreads() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.threads));
+    } catch {}
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+    } catch {}
+    updateConnectionBadge();
+  }
+
+  function updateConnectionBadge() {
+    const hasKey = Boolean(state.settings.apiKey && state.settings.apiKey.trim());
+    el.modeBadgeLabel.textContent = hasKey ? 'متصل عبر API مباشر' : 'نواة محلية نشطة';
+  }
+
+  function getActiveThread() {
+    return state.threads.find(t => t.id === state.activeId) || state.threads[0];
+  }
+
+  function createNewThread(render = true) {
+    if (state.streaming) return;
+    const current = getActiveThread();
+    if (current && current.messages.length === 0) {
+      state.activeId = current.id;
+      if (render) {
+        renderThreads();
+        renderMessages();
+      }
+      closeMobileSidebar();
+      el.composerInput.focus();
+      return;
+    }
+
+    const nt = {
+      id: uid(),
+      title: 'محادثة جديدة',
+      updatedAt: Date.now(),
+      model: state.model,
+      messages: []
+    };
+    state.threads.unshift(nt);
+    state.activeId = nt.id;
+    saveThreads();
+    if (render) {
+      renderThreads();
+      renderMessages();
+    }
+    closeMobileSidebar();
+    el.composerInput.focus();
+  }
+
+  function deleteThread(id, ev) {
+    ev.stopPropagation();
+    if (state.streaming) return;
+    state.threads = state.threads.filter(t => t.id !== id);
+    if (state.threads.length === 0) {
+      createNewThread(false);
+    } else if (state.activeId === id) {
+      state.activeId = state.threads[0].id;
+    }
+    saveThreads();
+    renderThreads();
+    renderMessages();
+    showToast('تم حذف المحادثة');
+  }
+
+  function renameThread(id, ev) {
+    ev.stopPropagation();
+    const target = state.threads.find(t => t.id === id);
+    if (!target) return;
+    const nextTitle = prompt('أدخل عنواناً جديداً للمحادثة:', target.title);
+    if (nextTitle && nextTitle.trim()) {
+      target.title = nextTitle.trim().slice(0, 60);
+      saveThreads();
+      renderThreads();
+    }
+  }
+
+  function renderThreads() {
+    const q = state.searchQuery.trim().toLowerCase();
+    const filtered = state.threads.filter(t => !q || t.title.toLowerCase().includes(q));
+    el.threadCountBadge.textContent = String(state.threads.length);
+
+    if (filtered.length === 0) {
+      el.threadsList.innerHTML = `<div class="text-center py-8 text-xs" style="color:var(--txt-dim)">لا توجد نتائج مطابقة</div>`;
+      return;
+    }
+
+    el.threadsList.innerHTML = filtered.map(t => {
+      const active = t.id === state.activeId ? 'active' : '';
+      const count = t.messages.length;
+      return `
+        <div class="thread-item ${active}" data-id="${t.id}">
+          <span class="g-icon xs ${t.id === state.activeId ? '' : 'obsidian'}" style="--sz:28px;--rad:9px">
+            <svg><use href="#ic-chat"/></svg>
+          </span>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-medium truncate">${escapeHtml(t.title)}</div>
+            <div class="text-[10px] truncate" style="color:var(--txt-dim)">${count === 0 ? 'فارغة' : count + ' رسائل'}</div>
+          </div>
+          <div class="thread-actions">
+            <button class="mini-act" data-rename="${t.id}" title="تعديل العنوان">
+              <svg><use href="#ic-edit"/></svg>
+            </button>
+            <button class="mini-act" data-del="${t.id}" title="حذف">
+              <svg><use href="#ic-trash"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function formatTime(ts) {
+    try {
+      return new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  function renderMessages() {
+    const thread = getActiveThread();
+    if (!thread || thread.messages.length === 0) {
+      el.welcomeState.classList.remove('hidden');
+      el.messagesList.innerHTML = '';
+      return;
+    }
+
+    el.welcomeState.classList.add('hidden');
+    el.messagesList.innerHTML = thread.messages.map((m, idx) => {
+      if (m.role === 'user') {
+        return `
+          <div class="msg-enter flex flex-col items-start">
+            <div class="max-w-[88%] sm:max-w-[78%] user-bubble px-4 py-3">
+              ${m.fileName ? `
+                <div class="mb-2 pb-2 border-b border-white/20 flex items-center gap-2 text-xs">
+                  <svg class="w-4 h-4 shrink-0" style="stroke:#fff;fill:none;stroke-width:2"><use href="#ic-doc"/></svg>
+                  <span class="latin font-medium truncate">${escapeHtml(m.fileName)}</span>
+                </div>
+              ` : ''}
+              <div class="text-[0.95rem] leading-relaxed whitespace-pre-wrap">${escapeHtml(m.content)}</div>
+            </div>
+            <div class="mt-1.5 px-1 flex items-center gap-2 text-[11px]" style="color:var(--txt-dim)">
+              <span>أنت</span>
+              <span>·</span>
+              <span>${formatTime(m.ts)}</span>
+              <button class="hover:text-white transition cursor-pointer" data-copy-msg="${idx}" title="نسخ النص">نسخ</button>
+            </div>
+          </div>
+        `;
+      } else {
+        const modelInfo = MODELS[m.model || 'core'] || MODELS.core;
+        const thoughtBlock = m.thought ? `
+          <details class="thought-box">
+            <summary>
+              <span class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-cpu"/></svg>
+                <span>مسار التحليل المنطقي (${m.latency || '0.9s'})</span>
+              </span>
+              <svg class="w-3.5 h-3.5" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-chev-down"/></svg>
+            </summary>
+            <div class="thought-content">${escapeHtml(m.thought)}</div>
+          </details>
+        ` : '';
+
+        return `
+          <div class="msg-enter flex items-start gap-3">
+            <span class="g-icon sm ${modelInfo.style} mt-0.5">
+              <svg><use href="${modelInfo.icon}"/></svg>
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="latin text-xs font-bold text-white">${modelInfo.name}</span>
+                <span class="text-[11px]" style="color:var(--txt-dim)">${formatTime(m.ts)}</span>
+              </div>
+              <div class="ai-card p-4 sm:p-5">
+                ${thoughtBlock}
+                <div class="md-body">${renderMarkdown(m.content)}</div>
+              </div>
+              <div class="mt-2 px-1 flex items-center justify-between gap-2 text-[11px]" style="color:var(--txt-dim)">
+                <div class="flex items-center gap-3">
+                  <button class="inline-flex items-center gap-1 hover:text-white transition cursor-pointer" data-copy-msg="${idx}">
+                    <svg class="w-3.5 h-3.5" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-copy"/></svg>
+                    <span>نسخ الرد</span>
+                  </button>
+                  ${idx === thread.messages.length - 1 ? `
+                    <button class="inline-flex items-center gap-1 hover:text-red-400 transition cursor-pointer" data-regen="1">
+                      <svg class="w-3.5 h-3.5" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-refresh"/></svg>
+                      <span>إعادة التوليد</span>
+                    </button>
+                  ` : ''}
+                </div>
+                <span class="latin">${m.meta || ''}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+
+    scrollToBottom();
+  }
+
+  function scrollToBottom(smooth = false) {
+    el.chatScroll.scrollTo({
+      top: el.chatScroll.scrollHeight,
+      behavior: smooth ? 'smooth' : 'auto'
+    });
+  }
+
+  // Built-in Intelligent Local Responder (works seamlessly offline)
+  function buildSmartReply(promptText, fileObj) {
+    const q = promptText.toLowerCase();
+    let thought = '';
+    if (state.deepThink) {
+      thought = 'تحليل بنية الطلب وتحديد السياق التقني واللغوي -> استخلاص المتطلبات الأساسية -> صياغة إجابة مهيكلة عالية الدقة مع التحقق من سلامة الشيفرات والتوصيات.';
+    }
+
+    if (fileObj) {
+      const lines = fileObj.content.split('\n').length;
+      const preview = fileObj.content.slice(0, 320);
+      return {
+        thought,
+        content: `### تحليل الملف المرفق: \`${fileObj.name}\`\n\nتمت قراءة الملف بنجاح (**${lines}** سطراً). فيما يلي ملخص التحليل والملاحظات الأساسية:\n\n- **حجم المحتوى:** ${fileObj.sizeLabel} من النصوص أو الشيفرات القابلة للمعالجة.\n- **البنية العامة:** الملف منظم ويمكن تقسيمه إلى وحدات مستقلة لرفع القابلية للصيانة.\n- **التوصية السريعة:** تأكد من التحقق من المدخلات وإضافة تعليقات توثيقية للدوال المحورية.\n\n\`\`\`text\n${preview}${fileObj.content.length > 320 ? '\n... [تم اختصار بقية النص للعرض]' : ''}\n\`\`\`\n\nإذا أردت تعديلاً محدداً أو استخراج بيانات بعينها من هذا الملف، اكتب طلبك مباشرة.`
+      };
+    }
+
+    if (/api|node|express|واجهة برمج|كود|برمج|دالة|python|js|javascript/.test(q) || state.codeFocus) {
+      return {
+        thought,
+        content: `### تصميم حل برمجي منظم\n\nإليك تنفيذ نظيف يتبع معايير الهندسة الحديثة مع فصل المسؤوليات ومعالجة الأخطاء بشكل مركزي:\n\n\`\`\`javascript\nimport express from 'express';\n\nconst app = express();\napp.use(express.json({ limit: '1mb' }));\n\nconst tasks = new Map();\n\napp.post('/api/v1/tasks', (req, res) => {\n  const { title, priority = 'normal' } = req.body ?? {};\n  if (!title || typeof title !== 'string') {\n    return res.status(400).json({ error: 'حقل العنوان مطلوب ويجب أن يكون نصاً' });\n  }\n\n  const item = {\n    id: crypto.randomUUID(),\n    title: title.trim(),\n    priority,\n    createdAt: new Date().toISOString()\n  };\n\n  tasks.set(item.id, item);\n  return res.status(201).json({ data: item });\n});\n\napp.get('/api/v1/tasks', (_req, res) => {\n  return res.json({ data: Array.from(tasks.values()) });\n});\n\napp.listen(3000, () => console.log('Server ready on port 3000'));\n\`\`\`\n\n### النقاط المعمارية المطبقة\n- **التحقق الصارم:** فحص نوع البيانات وحجم الطلب قبل التخزين.\n- **هيكلة قياسية:** إرجاع استجابات JSON موحدة مع رموز حالة HTTP الصحيحة.\n- **قابلية التوسع:** يمكن استبدال \`Map\` بطبقة قاعدة بيانات PostgreSQL أو Redis دون المساس بعقود الواجهة.`
+      };
+    }
+
+    if (/قاعدة بيانات|قواعد البيانات|معمار|نظام|جدول|sql|فهارس/.test(q)) {
+      return {
+        thought,
+        content: `### المخطط المعماري لقاعدة البيانات\n\nلضمان أداء عالٍ واستجابة أقل من **15ms** للاستعلامات المتكررة، يُنصح بتقسيم الجداول الأساسية مع فهارس مركبة مدروسة:\n\n\`\`\`sql\nCREATE TABLE users (\n  id UUID PRIMARY KEY,\n  email VARCHAR(255) UNIQUE NOT NULL,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\nCREATE TABLE orders (\n  id UUID PRIMARY KEY,\n  user_id UUID NOT NULL REFERENCES users(id),\n  status VARCHAR(32) NOT NULL,\n  total_cents BIGINT NOT NULL CHECK (total_cents >= 0),\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\nCREATE INDEX idx_orders_user_created ON orders (user_id, created_at DESC);\n\`\`\`\n\n- **تخزين القيم المالية:** استخدام \`BIGINT\` بالوحدات الصغرى لتفادي أخطاء الفاصلة العائمة.\n- **الفهرسة المركبة:** الفهرس \`(user_id, created_at DESC)\` يسرّع عرض سجل طلبات المستخدم فوراً.\n- **التوسع المستقبلي:** إضافة طبقة تخزين مؤقت للجلسات والبيانات الأكثر قراءة.`
+      };
+    }
+
+    if (/أمان|تأمين|حماي|تشفير|ويب|جلسات/.test(q)) {
+      return {
+        thought,
+        content: `### دليل تأمين تطبيقات الويب الحديثة\n\nلتأمين البنية التحتية وحماية بيانات المستخدمين بفاعلية، اعتمد الطبقات الدفاعية التالية:\n\n- **إدارة الجلسات الآمنة:** تخزين رموز الجلسة داخل ملفات تعريف ارتباط بخصائص \`HttpOnly\` و \`Secure\` و \`SameSite=Strict\`.\n- **تشفير البيانات:** فرض بروتوكول TLS 1.3 للنقل، وتشفير الحقول الحساسة في قاعدة البيانات باستخدام خوارزمية \`AES-256-GCM\`.\n- **تحديد المعدل (Rate Limiting):** حماية نقاط الدخول الحساسة من الطلبات المتكررة المؤتمتة.\n- **سياسة أمان المحتوى (CSP):** تقييد مصادر النصوص البرمجية لمنع حقن الشيفرات في المتصفح.`
+      };
+    }
+
+    if (/مقترح|رسالة|رسمي|إدار|بريد|خطة/.test(q)) {
+      return {
+        thought,
+        content: `### مسودة مقترح تنفيذي رسمي\n\n> **الموضوع:** مقترح إطلاق منصة التحليلات التشغيلية الموحدة\n\n**السادة في الإدارة التنفيذية المحترمون،**\n\nتحية طيبة وبعد،\n\nنودّ عرض مقترح تطوير منصة تحليلات داخلية تهدف إلى توحيد مؤشرات الأداء الرئيسية في لوحة قيادة فورية، مما يختصر زمن إعداد التقارير الأسبوعية بنسبة **65%** ويرفع دقة القرارات التشغيلية.\n\n- **النطاق المرحلي:** ربط مصادر البيانات الأساسية خلال أربعة أسابيع عمل.\n- **العائد المتوقع:** تقليص التكاليف التشغيلية المتكررة وتسريع رصد الاختناقات.\n- **الخطوة التالية:** اعتماد فريق العمل المصغر والبدء بالنموذج الأولي.\n\nوتفضلوا بقبول فائق الاحترام والتقدير.`
+      };
+    }
+
+    return {
+      thought,
+      content: `### استجابة WormGPT المنظمة\n\nتم تحليل طلبك: **"${promptText.slice(0, 90)}${promptText.length > 90 ? '...' : ''}"**\n\nإليك إطار عمل واضح ومباشر للتنفيذ:\n\n- **تحديد الهدف الأساسي:** تقسيم المطلوب إلى مراحل صغيرة قابلة للقياس والتحقق.\n- **التنفيذ العملي:** البدء بنموذج أولي مركز يختبر الفرضية الجوهرية بأقل تعقيد ممكن.\n- **المراجعة والتحسين:** قياس سرعة الأداء وجودة المخرجات ثم تحسين النقاط الحرجة.\n\nيمكنك تزويدي بتفاصيل إضافية، أو إرفاق ملف نصي/برمجي من الشريط السفلي، أو تفعيل **التركيز البرمجي** للحصول على شيفرة مصدرية مخصصة.`
+    };
+  }
+
+  // Streaming UI Engine
+  async function streamAssistantResponse(thread, userText, attachedFile) {
+    state.streaming = true;
+    state.stopSignal = false;
+    updateSendButtonState();
+
+    const startTime = performance.now();
+    const modelInfo = MODELS[state.model] || MODELS.core;
+
+    // Create live placeholder DOM node
+    const liveWrap = document.createElement('div');
+    liveWrap.className = 'msg-enter flex items-start gap-3';
+    liveWrap.innerHTML = `
+      <span class="g-icon sm ${modelInfo.style} mt-0.5">
+        <svg><use href="${modelInfo.icon}"/></svg>
+      </span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="latin text-xs font-bold text-white">${modelInfo.name}</span>
+          <span class="text-[11px] text-red-400">يعالج الطلب...</span>
+        </div>
+        <div class="ai-card p-4 sm:p-5">
+          <div id="liveThoughtSlot"></div>
+          <div id="liveMdBody" class="md-body"><span class="stream-caret"></span></div>
+        </div>
+      </div>
+    `;
+    el.welcomeState.classList.add('hidden');
+    el.messagesList.appendChild(liveWrap);
+    scrollToBottom(true);
+
+    const liveBody = liveWrap.querySelector('#liveMdBody');
+    const liveThoughtSlot = liveWrap.querySelector('#liveThoughtSlot');
+
+    let finalContent = '';
+    let finalThought = '';
+
+    const hasApi = Boolean(state.settings.apiKey && state.settings.apiKey.trim());
+
+    if (hasApi) {
+      try {
+        const apiMessages = [
+          { role: 'system', content: state.settings.systemPrompt },
+          ...thread.messages.map(m => ({ role: m.role, content: m.content }))
+        ];
+        const res = await fetch(state.settings.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + state.settings.apiKey.trim()
+          },
+          body: JSON.stringify({
+            model: state.settings.apiModel || 'gpt-4o-mini',
+            temperature: Number(state.settings.temperature) || 0.7,
+            messages: apiMessages
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error?.message || 'خطأ في الاتصال بالخادم');
+        finalContent = data?.choices?.[0]?.message?.content || 'لم يتم إرجاع نص من الخادم.';
+      } catch (err) {
+        finalContent = `### تعذر الاتصال بنقطة API الخارجية\n\nحدث خطأ أثناء الاتصال: \`${err.message}\`\n\nتأكد من صلاحية المفتاح في **الإعدادات** أو امسح المفتاح للعودة إلى النواة المحلية الفورية.`;
+      }
+    } else {
+      const built = buildSmartReply(userText, attachedFile);
+      finalContent = built.content;
+      finalThought = built.thought;
+    }
+
+    if (finalThought) {
+      liveThoughtSlot.innerHTML = `
+        <details class="thought-box" open>
+          <summary>
+            <span class="flex items-center gap-2">
+              <svg class="w-3.5 h-3.5" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-cpu"/></svg>
+              <span>مسار التحليل المنطقي</span>
+            </span>
+            <svg class="w-3.5 h-3.5" style="stroke:currentColor;fill:none;stroke-width:2"><use href="#ic-chev-down"/></svg>
+          </summary>
+          <div class="thought-content">${escapeHtml(finalThought)}</div>
+        </details>
+      `;
+    }
+
+    // Smooth token streaming simulation
+    const chunks = finalContent.match(/.{1,14}(\s|$)/gs) || [finalContent];
+    let acc = '';
+    for (let i = 0; i < chunks.length; i++) {
+      if (state.stopSignal) {
+        acc += '\n\n*[تم إيقاف التوليد بطلب المستخدم]*';
+        break;
+      }
+      acc += chunks[i];
+      liveBody.innerHTML = renderMarkdown(acc) + '<span class="stream-caret"></span>';
+      scrollToBottom();
+      await new Promise(r => setTimeout(r, 22));
+    }
+
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1) + 's';
+    const tokenEst = Math.max(18, Math.round(acc.split(/\s+/).length * 1.35));
+
+    thread.messages.push({
+      role: 'assistant',
+      content: acc,
+      thought: finalThought,
+      model: state.model,
+      latency: elapsed,
+      meta: `${elapsed} · ${tokenEst} tokens`,
+      ts: Date.now()
+    });
+    thread.updatedAt = Date.now();
+
+    state.streaming = false;
+    state.stopSignal = false;
+    updateSendButtonState();
+    saveThreads();
+    renderThreads();
+    renderMessages();
+  }
+
+  function updateSendButtonState() {
+    const useEl = el.sendBtnIcon.querySelector('use');
+    if (state.streaming) {
+      useEl.setAttribute('href', '#ic-stop');
+      el.sendOrStopBtn.setAttribute('aria-label', 'إيقاف');
+    } else {
+      useEl.setAttribute('href', '#ic-send');
+      el.sendOrStopBtn.setAttribute('aria-label', 'إرسال');
+    }
+  }
+
+  async function handleSend(customPrompt) {
+    if (state.streaming) {
+      state.stopSignal = true;
+      return;
+    }
+
+    const rawText = typeof customPrompt === 'string' ? customPrompt : el.composerInput.value;
+    const text = rawText.trim();
+    if (!text && !state.attachment) return;
+
+    const thread = getActiveThread();
+    const attached = state.attachment;
+    const finalUserText = text || `حلل الملف المرفق: ${attached.name}`;
+
+    // Auto-title first message
+    if (thread.messages.length === 0) {
+      thread.title = finalUserText.replace(/\s+/g, ' ').slice(0, 42);
+    }
+
+    thread.messages.push({
+      role: 'user',
+      content: finalUserText,
+      fileName: attached ? attached.name : null,
+      ts: Date.now()
+    });
+
+    // Reset composer
+    el.composerInput.value = '';
+    el.composerInput.style.height = 'auto';
+    el.charCounter.textContent = '0';
+    clearAttachment();
+
+    saveThreads();
+    renderThreads();
+    renderMessages();
+
+    await streamAssistantResponse(thread, finalUserText, attached);
+  }
+
+  function clearAttachment() {
+    state.attachment = null;
+    el.fileInput.value = '';
+    el.attachmentBar.classList.add('hidden');
+  }
+
+  function closeMobileSidebar() {
+    el.sidebar.classList.remove('mobile-open');
+    el.mobileBackdrop.classList.remove('show');
+  }
+
+  // Event Listeners
+  el.collapseSidebarBtn.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      closeMobileSidebar();
+    } else {
+      el.sidebar.classList.toggle('collapsed');
+    }
+  });
+
+  el.openSidebarBtn.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      el.sidebar.classList.add('mobile-open');
+      el.mobileBackdrop.classList.add('show');
+    } else {
+      el.sidebar.classList.toggle('collapsed');
+    }
+  });
+
+  el.mobileBackdrop.addEventListener('click', closeMobileSidebar);
+  el.newChatBtn.addEventListener('click', () => createNewThread(true));
+  el.quickNewChatBtn.addEventListener('click', () => createNewThread(true));
+
+  el.searchThreadsInput.addEventListener('input', e => {
+    state.searchQuery = e.target.value;
+    renderThreads();
+  });
+
+  el.threadsList.addEventListener('click', e => {
+    const delBtn = e.target.closest('[data-del]');
+    if (delBtn) return deleteThread(delBtn.dataset.del, e);
+
+    const renBtn = e.target.closest('[data-rename]');
+    if (renBtn) return renameThread(renBtn.dataset.rename, e);
+
+    const item = e.target.closest('.thread-item');
+    if (item && !state.streaming) {
+      state.activeId = item.dataset.id;
+      renderThreads();
+      renderMessages();
+      closeMobileSidebar();
+    }
+  });
+
+  el.clearAllThreadsBtn.addEventListener('click', () => {
+    if (state.streaming) return;
+    if (confirm('هل تريد مسح جميع المحادثات المحفوظة؟')) {
+      state.threads = [];
+      createNewThread(true);
+      showToast('تم مسح السجل بالكامل');
+    }
+  });
+
+  // Model Selector Popover
+  el.modelSelectorBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    el.modelMenu.classList.toggle('open');
+  });
+
+  document.addEventListener('click', e => {
+    if (!el.modelMenu.contains(e.target)) {
+      el.modelMenu.classList.remove('open');
+    }
+  });
+
+  document.querySelectorAll('.model-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.model;
+      state.model = key;
+      const info = MODELS[key];
+      el.activeModelName.textContent = info.name;
+      el.activeModelSub.textContent = info.sub;
+      el.activeModelIcon.className = `g-icon xs ${info.style}`;
+      el.activeModelIcon.innerHTML = `<svg><use href="${info.icon}"/></svg>`;
+
+      document.querySelectorAll('.model-opt .check-mark').forEach(c => c.classList.add('hidden'));
+      btn.querySelector('.check-mark').classList.remove('hidden');
+      el.modelMenu.classList.remove('open');
+
+      if (key === 'reasoning') {
+        state.deepThink = true;
+        el.deepThinkToggle.classList.add('active');
+      }
+      if (key === 'coder') {
+        state.codeFocus = true;
+        el.codeFocusToggle.classList.add('active');
+      }
+      showToast(`تم التبديل إلى ${info.name}`);
+    });
+  });
+
+  // Starter Cards
+  document.querySelectorAll('.starter-card').forEach(card => {
+    card.addEventListener('click', () => {
+      handleSend(card.dataset.prompt);
+    });
+  });
+
+  // Message Actions (Copy / Copy Code / Regenerate)
+  el.messagesList.addEventListener('click', e => {
+    const codeBtn = e.target.closest('[data-copy]');
+    if (codeBtn) {
+      const code = decodeURIComponent(codeBtn.dataset.copy);
+      navigator.clipboard.writeText(code);
+      const span = codeBtn.querySelector('span');
+      const prev = span.textContent;
+      span.textContent = 'تم النسخ';
+      setTimeout(() => (span.textContent = prev), 1500);
+      showToast('تم نسخ الكود البرمجي');
+      return;
+    }
+
+    const msgBtn = e.target.closest('[data-copy-msg]');
+    if (msgBtn) {
+      const thread = getActiveThread();
+      const msg = thread?.messages[Number(msgBtn.dataset.copyMsg)];
+      if (msg) {
+        navigator.clipboard.writeText(msg.content);
+        showToast('تم نسخ الرسالة');
+      }
+      return;
+    }
+
+    const regenBtn = e.target.closest('[data-regen]');
+    if (regenBtn && !state.streaming) {
+      const thread = getActiveThread();
+      if (!thread || thread.messages.length < 2) return;
+      thread.messages.pop(); // remove last AI msg
+      const lastUser = [...thread.messages].reverse().find(m => m.role === 'user');
+      renderMessages();
+      if (lastUser) {
+        streamAssistantResponse(thread, lastUser.content, null);
+      }
+    }
+  });
+
+  // Composer Auto-resize & Shortcuts
+  el.composerInput.addEventListener('input', () => {
+    el.composerInput.style.height = 'auto';
+    el.composerInput.style.height = Math.min(el.composerInput.scrollHeight, 180) + 'px';
+    el.charCounter.textContent = String(el.composerInput.value.length);
+  });
+
+  el.composerInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      createNewThread(true);
+    }
+  });
+
+  el.sendOrStopBtn.addEventListener('click', () => handleSend());
+
+  el.deepThinkToggle.addEventListener('click', () => {
+    state.deepThink = !state.deepThink;
+    el.deepThinkToggle.classList.toggle('active', state.deepThink);
+  });
+
+  el.codeFocusToggle.addEventListener('click', () => {
+    state.codeFocus = !state.codeFocus;
+    el.codeFocusToggle.classList.toggle('active', state.codeFocus);
+  });
+
+  // File Attachment
+  el.attachFileBtn.addEventListener('click', () => el.fileInput.click());
+  el.fileInput.addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      const kb = (file.size / 1024).toFixed(1) + ' KB';
+      state.attachment = { name: file.name, sizeLabel: kb, content: text };
+      el.attachmentName.textContent = file.name;
+      el.attachmentSize.textContent = kb;
+      el.attachmentBar.classList.remove('hidden');
+      el.composerInput.focus();
+    };
+    reader.readAsText(file);
+  });
+  el.removeAttachmentBtn.addEventListener('click', clearAttachment);
+
+  // Scroll to Bottom Visibility
+  el.chatScroll.addEventListener('scroll', () => {
+    const dist = el.chatScroll.scrollHeight - el.chatScroll.scrollTop - el.chatScroll.clientHeight;
+    el.scrollBottomBtn.classList.toggle('hidden', dist < 160);
+  });
+  el.scrollBottomBtn.addEventListener('click', () => scrollToBottom(true));
+
+  // Export Chat
+  el.exportChatBtn.addEventListener('click', () => {
+    const thread = getActiveThread();
+    if (!thread || thread.messages.length === 0) {
+      showToast('لا توجد رسائل لتصديرها');
+      return;
+    }
+    const md = thread.messages.map(m => `### ${m.role === 'user' ? 'المستخدم' : 'WormGPT'}\n${m.content}\n`).join('\n---\n\n');
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${thread.title.replace(/\s+/g, '_')}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('تم تصدير المحادثة بصيغة Markdown');
+  });
+
+  // Settings Modal
+  function openSettings() {
+    el.sysPromptInput.value = state.settings.systemPrompt;
+    el.apiEndpointInput.value = state.settings.endpoint;
+    el.apiKeyInput.value = state.settings.apiKey;
+    el.apiModelInput.value = state.settings.apiModel;
+    el.tempRangeInput.value = state.settings.temperature;
+    el.tempValLabel.textContent = state.settings.temperature;
+    el.settingsModal.classList.add('open');
+  }
+
+  function closeSettings() {
+    el.settingsModal.classList.remove('open');
+  }
+
+  el.openSettingsTopBtn.addEventListener('click', openSettings);
+  el.openSettingsSidebarBtn.addEventListener('click', openSettings);
+  el.closeSettingsBtn.addEventListener('click', closeSettings);
+  el.cancelSettingsBtn.addEventListener('click', closeSettings);
+  el.settingsModal.addEventListener('click', e => {
+    if (e.target === el.settingsModal) closeSettings();
+  });
+
+  el.tempRangeInput.addEventListener('input', e => {
+    el.tempValLabel.textContent = e.target.value;
+  });
+
+  el.saveSettingsBtn.addEventListener('click', () => {
+    state.settings.systemPrompt = el.sysPromptInput.value.trim() || state.settings.systemPrompt;
+    state.settings.endpoint = el.apiEndpointInput.value.trim() || 'https://api.openai.com/v1/chat/completions';
+    state.settings.apiKey = el.apiKeyInput.value.trim();
+    state.settings.apiModel = el.apiModelInput.value.trim() || 'gpt-4o-mini';
+    state.settings.temperature = Number(el.tempRangeInput.value);
+    saveSettings();
+    closeSettings();
+    showToast('تم حفظ الإعدادات بنجاح');
+  });
+
+  // Init
+  loadState();
+  renderThreads();
+  renderMessages();
+})();
+</script>
+</body>
+</html>
